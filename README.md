@@ -27,6 +27,7 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
 4. Symlink the `dist` folder of the Lab repo into the `public` directory. The symlink is not included in this project so that you can customize it if you desire. However, if you cloned this repo into the Lab repo, this is just:
 
     ```
+    cd lab.server
     ln -s ../dist public
     ```
 
