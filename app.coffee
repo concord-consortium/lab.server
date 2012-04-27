@@ -5,8 +5,9 @@ express   = require 'express'
 httpProxy = require 'http-proxy'
 io        = require 'socket.io'
 
-DEFAULT_PORT = 3000
-port = if process.env.NODE_PORT then parseInt(process.env.NODE_PORT, 10) else DEFAULT_PORT
+port = 3000 unless process.env.NODE_PORT
+if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
+
 console.log "about to listen on port #{port}"
 app = express.createServer()
 server = app.listen port
