@@ -1,0 +1,17 @@
+{
+  "author": "Concord Consortium",
+  "name": "lab.server",
+  "description": "Node + CouchDB backend for Next Gen MW",
+  "version": "0.0.0",
+  "dependencies": {
+    "http-proxy": "~0.8",
+    "express": "~3.0",
+    "coffee-script": "~1.3.1",
+    "socket.io": "~0.9"
+    },
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
