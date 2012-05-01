@@ -4,7 +4,9 @@ util      = require 'util'
 express   = require 'express'
 httpProxy = require 'http-proxy'
 io        = require 'socket.io'
+nano      = require('nano')('http://localhost:5984')
 
+# Choose a port and listen
 port = 3000 unless process.env.NODE_PORT
 if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
 
@@ -12,36 +14,20 @@ console.log "about to listen on port #{port}"
 app = express.createServer()
 server = app.listen port
 
+# Listen for socket.io requests from client
 # see https://github.com/LearnBoost/socket.io/issues/843
 io = io.listen server
+
+# the CouchDB database we will use
+configs = nano.use 'model-configs'
 
 #
 # handle model data here
 #
 
-app.get '/model-config', (req, res, next) ->
-  options =
-    host: 'localhost'
-    port: 5984
-    path: '/model-configs/example-1'
+app.get '/model-config', (req, res) ->
+  configs.get('example-1').pipe res
 
-  couch = http.get options, (couchResponse) ->
-    val = ""
-
-    if couchResponse.statusCode isnt 200
-      next """
-           There was a #{couchResponse.statusCode} error reading from the CouchDB server:
-
-           #{util.inspect couchResponse.headers}
-           """
-
-    couchResponse.on 'data', (data) -> val += data
-    couchResponse.on 'end', ->
-      res.contentType 'application/json'
-      res.send val
-
-  couch.on 'error', (err) ->
-    next "There was an error connecting to the CouchDB server:\n\n#{util.inspect err}"
 
 #
 # handle client-side logging here
