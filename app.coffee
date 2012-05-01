@@ -36,7 +36,9 @@ app.get '/model-config', (req, res, next) ->
            """
 
     couchResponse.on 'data', (data) -> val += data
-    couchResponse.on 'end', -> res.send val
+    couchResponse.on 'end', ->
+      res.contentType 'application/json'
+      res.send val
 
   couch.on 'error', (err) ->
     next "There was an error connecting to the CouchDB server:\n\n#{util.inspect err}"
