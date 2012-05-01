@@ -28,6 +28,23 @@ configs = nano.use 'model-configs'
 app.get '/model-config', (req, res) ->
   configs.get('example-1').pipe res
 
+app.put '/model-config', (req, res, next) ->
+  opts =
+    db: 'model-configs'
+    doc: 'example-1'
+    method: 'PUT'
+    body: ""
+
+  req.on 'data', (val) -> opts.body += val
+  req.on 'end', ->
+    opts.body = JSON.parse opts.body
+    console.log opts.body
+    nano.request opts, (err, body) ->
+      console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
+      if body.ok
+        res.json body
+      else
+        next "Document update error: \n\n#{util.inspect body}\n\n"
 
 #
 # handle client-side logging here
