@@ -68,6 +68,7 @@ app.put '/model-config', (req, res, next) ->
       console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
       if body.ok
         res.json body
+        req.session._rev = body.rev
       else
         next "Document update error: \n\n#{util.inspect body}\n\n"
 
