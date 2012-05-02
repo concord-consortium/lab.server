@@ -1,9 +1,10 @@
-http      = require 'http'
-util      = require 'util'
-express   = require 'express'
-httpProxy = require 'http-proxy'
-io        = require 'socket.io'
-nano      = require('nano')('http://localhost:5984')
+http       = require 'http'
+util       = require 'util'
+express    = require 'express'
+httpProxy  = require 'http-proxy'
+io         = require 'socket.io'
+nanoModule = require 'nano'
+request    = require 'request'
 
 app = express.createServer()
 
@@ -23,8 +24,16 @@ server = app.listen port
 io = io.listen server
 
 # the CouchDB database we will use
-dbName = 'model-configs'
-db     = nano.use dbName
+dbPrefix = 'http://localhost:5984'
+dbName   = 'model-configs'
+nano     = nanoModule dbPrefix
+db       = nano.use dbName
+
+# TODO create a reasonably-likely-to-be-unique value of dbServerInstance if the couchdb instance
+# doesn't have one. Store it in a separate db so it doesn't get replicated.
+
+# A unique id for the CouchDB instance we're talking to, to namespace its counter
+dbServerInstance = 'test'
 
 #
 # session support
@@ -41,6 +50,18 @@ app.use express.session
 #
 app.get '/model-config', (req, res, net) ->
   db.get 'example-1', (err, doc) ->
+    req.session._id = doc._id
+    delete doc._id
+    req.session._rev = doc._rev
+    delete doc._rev
+    console.log "returning\n\n#{util.inspect doc}\n\n"
+    res.json doc
+
+app.get '/model-config/:docName', (req, res, next) ->
+  db.get req.params.docName, (error, doc) ->
+    if error
+      console.error "Couldn't get #{req.url}\n\n#{error}\n\n"
+      return next error
     req.session._id = doc._id
     delete doc._id
     req.session._rev = doc._rev
@@ -69,6 +90,50 @@ app.put '/model-config', (req, res, next) ->
       if body.ok
         res.json body
         req.session._rev = body.rev
+      else
+        next "Document update error: \n\n#{util.inspect body}\n\n"
+
+app.post '/model-configs', (req, res, next) ->
+  docBody = null
+  counter = null
+
+  # get an id
+  request.post "#{dbPrefix}/#{dbName}/_design/app/_update/bump/counter",  (error, response, body) ->
+    if error
+      next error
+    else if response.statusCode isnt 201
+      next "unexpected status code from bump/counter: #{response}"
+    else
+      console.log "ok: body = #{body}"
+      counter = parseInt body, 10
+      trySave()
+
+  # stream in the POST body
+  docStream = ''
+  req.on 'data', (val) -> docStream += val
+  req.on 'end', ->
+    try
+      docBody = JSON.parse docStream
+    catch error
+      next "couldn't parse body as JSON:\n\n#{docStream}\n\n"
+      return
+    trySave()
+
+  # Promises pattern would be useful here
+  trySave = ->
+    return unless docBody and counter
+    docName = "#{dbServerInstance}-#{counter}"
+    opts =
+      db    : dbName
+      method: 'PUT'
+      doc   : docName
+      body  : docBody
+
+    nano.request opts, (err, body) ->
+      console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
+      if body.ok
+        res.setHeader 'Location', "/model-config/#{docName}"
+        res.json docBody, 201
       else
         next "Document update error: \n\n#{util.inspect body}\n\n"
 
