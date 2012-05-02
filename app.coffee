@@ -40,20 +40,30 @@ app.use express.session
 # requests for model data
 #
 app.get '/model-config', (req, res, net) ->
-  console.log "#{util.inspect req.session}"
-  configs.get('example-1').pipe res
+  configs.get 'example-1', (err, doc) ->
+    req.session._id = doc._id
+    delete doc._id
+    req.session._rev = doc._rev
+    delete doc._rev
+    console.log "returning\n\n#{util.inspect doc}\n\n"
+    res.json doc
 
 app.put '/model-config', (req, res, next) ->
-  opts =
-    db: 'model-configs'
-    doc: 'example-1'
-    method: 'PUT'
-    body: ''
+  doc = ''
 
-  req.on 'data', (val) -> opts.body += val
+  req.on 'data', (val) -> doc += val
+
   req.on 'end', ->
-    opts.body = JSON.parse opts.body
-    console.log opts.body
+    doc = JSON.parse doc
+    doc._rev = req.session._rev
+    doc._id  = req.session._id
+
+    opts =
+      db: 'model-configs'
+      doc: 'example-1'
+      method: 'PUT'
+      body: doc
+
     nano.request opts, (err, body) ->
       console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
       if body.ok
