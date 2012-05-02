@@ -1,4 +1,3 @@
-
 http      = require 'http'
 util      = require 'util'
 express   = require 'express'
@@ -24,7 +23,8 @@ server = app.listen port
 io = io.listen server
 
 # the CouchDB database we will use
-configs = nano.use 'model-configs'
+dbName = 'model-configs'
+db     = nano.use dbName
 
 #
 # session support
@@ -33,14 +33,14 @@ store = new express.session.MemoryStore()
 
 app.use express.cookieParser 'not very secret secret'
 app.use express.session
-    store: store
-    secret: 'not very secret secret'
+  store: store
+  secret: 'not very secret secret'
 
 #
 # requests for model data
 #
 app.get '/model-config', (req, res, net) ->
-  configs.get 'example-1', (err, doc) ->
+  db.get 'example-1', (err, doc) ->
     req.session._id = doc._id
     delete doc._id
     req.session._rev = doc._rev
@@ -49,20 +49,20 @@ app.get '/model-config', (req, res, net) ->
     res.json doc
 
 app.put '/model-config', (req, res, next) ->
-  doc = ''
+  docBody = ''
 
-  req.on 'data', (val) -> doc += val
+  req.on 'data', (val) -> docBody += val
 
   req.on 'end', ->
-    doc = JSON.parse doc
-    doc._rev = req.session._rev
-    doc._id  = req.session._id
+    docBody = JSON.parse docBody
+    docBody._rev = req.session._rev
+    docBody._id  = req.session._id
 
     opts =
-      db: 'model-configs'
-      doc: 'example-1'
+      db: dbName
       method: 'PUT'
-      body: doc
+      doc: 'example-1'
+      body: docBody
 
     nano.request opts, (err, body) ->
       console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
