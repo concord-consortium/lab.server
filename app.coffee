@@ -6,26 +6,41 @@ httpProxy = require 'http-proxy'
 io        = require 'socket.io'
 nano      = require('nano')('http://localhost:5984')
 
+app = express.createServer()
+
 # Choose a port and listen
 port = 3000 unless process.env.NODE_PORT
 if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
 
-console.log "about to listen on port #{port}"
-app = express.createServer()
+app.configure 'development', ->
+   console.log "Development env starting on port #{port}"
+app.configure 'production', ->
+  console.log "Production env starting on port #{port}"
+
+# get at the server; needed by socket.io per https://github.com/LearnBoost/socket.io/issues/843
 server = app.listen port
 
-# Listen for socket.io requests from client
-# see https://github.com/LearnBoost/socket.io/issues/843
+# listen for socket.io requests from client
 io = io.listen server
 
 # the CouchDB database we will use
 configs = nano.use 'model-configs'
 
 #
-# handle model data here
+# session support
 #
+store = new express.session.MemoryStore()
 
-app.get '/model-config', (req, res) ->
+app.use express.cookieParser 'not very secret secret'
+app.use express.session
+    store: store
+    secret: 'not very secret secret'
+
+#
+# requests for model data
+#
+app.get '/model-config', (req, res, net) ->
+  console.log "#{util.inspect req.session}"
   configs.get('example-1').pipe res
 
 app.put '/model-config', (req, res, next) ->
@@ -33,7 +48,7 @@ app.put '/model-config', (req, res, next) ->
     db: 'model-configs'
     doc: 'example-1'
     method: 'PUT'
-    body: ""
+    body: ''
 
   req.on 'data', (val) -> opts.body += val
   req.on 'end', ->
@@ -47,9 +62,8 @@ app.put '/model-config', (req, res, next) ->
         next "Document update error: \n\n#{util.inspect body}\n\n"
 
 #
-# handle client-side logging here
+# client-side logging
 #
-
 io.sockets.on 'connection', (socket) ->
   socket.emit 'news', hello: 'world'
   socket.on 'my other event', (data) ->
@@ -59,15 +73,7 @@ io.sockets.on 'connection', (socket) ->
     console.log "log from client: \n#{util.inspect logData}\n"
 
 #
-# handle proxies here
+# proxies and static serving (last so we can override their handling)
 #
-
 app.use '/couchdb', httpProxy.createServer 'localhost', 5984
-
-app.configure 'development', ->
-   console.log "Development env starting"
-
-app.configure 'production', ->
-  console.log "Production env starting"
-
 app.use express.static "#{__dirname}/public"
