@@ -13,7 +13,7 @@ port = 3000 unless process.env.NODE_PORT
 if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
 
 app.configure 'development', ->
-   console.log "Development env starting on port #{port}"
+  console.log "Development env starting on port #{port}"
 app.configure 'production', ->
   console.log "Production env starting on port #{port}"
 
@@ -38,6 +38,8 @@ dbServerInstance = 'test'
 #
 # session support
 #
+
+# TODO use a persistent CouchDB session store
 store = new express.session.MemoryStore()
 
 app.use express.cookieParser 'not very secret secret'
@@ -48,50 +50,39 @@ app.use express.session
 #
 # requests for model data
 #
-app.get '/model-config', (req, res, net) ->
-  db.get 'example-1', (err, doc) ->
-    req.session._id = doc._id
-    delete doc._id
-    req.session._rev = doc._rev
-    delete doc._rev
-    console.log "returning\n\n#{util.inspect doc}\n\n"
-    res.json doc
-
 app.get '/model-config/:docName', (req, res, next) ->
   db.get req.params.docName, (error, doc) ->
     if error
-      console.error "Couldn't get #{req.url}\n\n#{error}\n\n"
-      return next error
-    req.session._id = doc._id
-    delete doc._id
+      return next "Couldn't get #{req.url}\n\n#{error}\n\n"
     req.session._rev = doc._rev
     delete doc._rev
-    console.log "returning\n\n#{util.inspect doc}\n\n"
+    console.log "For request #{req.url}:\n  _rev = #{req.session._rev}\ndoc:\n\n#{util.inspect doc}\n\n"
     res.json doc
 
-app.put '/model-config', (req, res, next) ->
-  docBody = ''
-
-  req.on 'data', (val) -> docBody += val
-
+app.put '/model-config/:docName', (req, res, next) ->
+  docStream = ''
+  req.on 'data', (val) -> docStream += val
   req.on 'end', ->
-    docBody = JSON.parse docBody
+    try
+      docBody = JSON.parse docStream
+    catch error
+      return next "Couldn't parse body of client request as JSON:\n\n#{docStream}\n\n"
+
     docBody._rev = req.session._rev
-    docBody._id  = req.session._id
 
     opts =
       db: dbName
       method: 'PUT'
-      doc: 'example-1'
+      doc: docName
       body: docBody
 
-    nano.request opts, (err, body) ->
-      console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
-      if body.ok
-        res.json body
-        req.session._rev = body.rev
-      else
-        next "Document update error: \n\n#{util.inspect body}\n\n"
+    console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
+    nano.request opts, (error, body) ->
+      if error
+        return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect body}\n\n"
+      res.json docBody
+      # bump the _rev
+      req.session._rev = body.rev
 
 app.post '/model-configs', (req, res, next) ->
   docBody = null
@@ -100,13 +91,9 @@ app.post '/model-configs', (req, res, next) ->
   # get an id
   request.post "#{dbPrefix}/#{dbName}/_design/app/_update/bump/counter",  (error, response, body) ->
     if error
-      next error
-    else if response.statusCode isnt 201
-      next "unexpected status code from bump/counter: #{response}"
-    else
-      console.log "ok: body = #{body}"
-      counter = parseInt body, 10
-      trySave()
+      return "Error bumping counter:\n\n#{error}\n\n#{response}\n\n"
+    counter = parseInt body, 10
+    trySave()
 
   # stream in the POST body
   docStream = ''
@@ -115,8 +102,7 @@ app.post '/model-configs', (req, res, next) ->
     try
       docBody = JSON.parse docStream
     catch error
-      next "couldn't parse body as JSON:\n\n#{docStream}\n\n"
-      return
+      return next "Couldn't parse body of client request as JSON:\n\n#{docStream}\n\n"
     trySave()
 
   # Promises pattern would be useful here
@@ -129,13 +115,14 @@ app.post '/model-configs', (req, res, next) ->
       doc   : docName
       body  : docBody
 
-    nano.request opts, (err, body) ->
-      console.log "CouchDB response:\n\n#{util.inspect body}\n\n"
-      if body.ok
-        res.setHeader 'Location', "/model-config/#{docName}"
-        res.json docBody, 201
-      else
-        next "Document update error: \n\n#{util.inspect body}\n\n"
+    console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
+    nano.request opts, (error, body) ->
+      if error
+        return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect body}\n\n"
+      res.setHeader 'Location', "/model-config/#{docName}"
+      res.json docBody, 201
+      # and don't forget to remember the _rev
+      req.session._rev = body.rev
 
 #
 # client-side logging
