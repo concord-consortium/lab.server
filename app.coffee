@@ -23,11 +23,10 @@ server = app.listen port
 # listen for socket.io requests from client
 io = io.listen server
 
-# the CouchDB database we will use
+# the CouchDB database we will use (default cradle connection is to locahost:5984)
 dbPrefix = 'http://localhost:5984'
 dbName   = 'model-configs'
-
-db      = (new cradle.Connection()).database 'model-configs'
+db       = (new cradle.Connection()).database dbName
 
 # TODO create a reasonably-likely-to-be-unique value of dbServerInstance if the couchdb instance
 # doesn't have one. Store it in a separate db so it doesn't get replicated.
