@@ -108,4 +108,15 @@ io.sockets.on 'connection', (socket) ->
 # proxies and static serving (last so we can override their handling)
 #
 app.use '/couchdb', httpProxy.createServer 'localhost', 5984
+
+modelsProxy = new httpProxy.HttpProxy
+  target:
+    host: 'localhost'
+    port: 5984
+
+app.use '/models', (req, res, next) ->
+  # do this to avoid stripping the leading part of the url
+  req.url = req.originalUrl
+  modelsProxy.proxyRequest req, res
+
 app.use express.static "#{__dirname}/public"
