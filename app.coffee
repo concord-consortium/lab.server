@@ -91,7 +91,7 @@ app.post '/model-configs', (req, res, next) ->
   # get an id
   request.post "#{dbPrefix}/#{dbName}/_design/app/_update/bump/counter",  (error, response, body) ->
     if error
-      return "Error bumping counter:\n\n#{error}\n\n#{response}\n\n"
+      return next "Error bumping counter:\n\n#{error}\n\n#{response}\n\n"
     counter = parseInt body, 10
     trySave()
 
