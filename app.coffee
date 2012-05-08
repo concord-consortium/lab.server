@@ -87,20 +87,15 @@ app.post '/model-configs', (req, res, next) ->
   trySave = ->
     return unless docBody and counter
     docName = "#{dbServerInstance}-#{counter}"
-    opts =
-      db    : dbName
-      method: 'PUT'
-      doc   : docName
-      body  : docBody
 
     console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
-    nano.request opts, (error, body) ->
+    dbc.save docName, docBody, (error, couchRes) ->
       if error
-        return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect body}\n\n"
+        return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect couchRes}\n\n"
       res.setHeader 'Location', "/model-config/#{docName}"
       res.json docBody, 201
       # and don't forget to remember the _rev
-      req.session._rev = body.rev
+      req.session._rev = couchRes.rev
 
 #
 # client-side logging
