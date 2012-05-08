@@ -44,3 +44,34 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
     ```
 
 7. Visit the Lab app at [http://localhost:3000/](http://localhost:3000/)
+
+
+# Replicating CouchDB database from developer machine to dev server, or vice versa
+
+1. Set up an ssh tunnel to the deploy server, to access the remote CouchDB instance at
+   [http://localhost:5985/](http://localhost:5985)
+
+    ```
+    ssh -fN -L5985:127.0.0.1:5984 deploy@ec2-50-17-17-189.compute-1.amazonaws.com
+    ```
+
+    This will leave the tunnel open in the background. Leave off the `-fN` if you don't mind keeping
+    a terminal window open to the EC2 machine (perhaps you just want to replicate once and close the
+    tunnel by issuing a Ctrl-C.)
+
+
+2. With the ssh tunnel up, to replicate from the EC2 server to your local machine, issue the
+   following replication command (at the command line):
+
+    ```
+    curl -X POST http://username:password@127.0.0.1:5984/_replicate -d '{"source":"http://localhost:5985/model-configs", "target":"model-configs", "continuous":false}' -H "Content-Type: application/json"
+    ```
+
+  The `username` and `password` are only required if you set up an admin account on your local machine.
+
+  To replicate from your machine to the EC2 server, you need only swap target and source keys, and provide
+  the CouchDB admin password for the EC2 server rather than your local password, as folloows:
+
+    ```
+    curl -X POST http://127.0.0.1:5984/_replicate -d '{"source":"model-configs", "target":"http://username:password@localhost:5985/model-configs", "continuous":false}' -H "Content-Type: application/json"
+    ```
