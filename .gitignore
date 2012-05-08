@@ -1,3 +1,5 @@
 public
 *.sublime-workspace
 log/
+couchdb.stderr
+couchdb.stdout
