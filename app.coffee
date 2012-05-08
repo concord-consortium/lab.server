@@ -90,7 +90,7 @@ app.post '/model-configs', (req, res, next) ->
       if error
         return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect couchRes}\n\n"
       res.setHeader 'Location', "/model-config/#{docName}"
-      res.json docBody, 201
+      res.json 201, docBody
       # and don't forget to remember the _rev
       req.session._rev = couchRes.rev
 
