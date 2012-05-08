@@ -59,31 +59,6 @@ app.get '/model-config/:docName', (req, res, next) ->
     console.log "For request #{req.url}:\n  _rev = #{req.session._rev}\ndoc:\n\n#{util.inspect doc}\n\n"
     res.json doc
 
-app.put '/model-config/:docName', (req, res, next) ->
-  docStream = ''
-  req.on 'data', (val) -> docStream += val
-  req.on 'end', ->
-    try
-      docBody = JSON.parse docStream
-    catch error
-      return next "Couldn't parse body of client request as JSON:\n\n#{docStream}\n\n"
-
-    docBody._rev = req.session._rev
-
-    opts =
-      db: dbName
-      method: 'PUT'
-      doc: docName
-      body: docBody
-
-    console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
-    nano.request opts, (error, body) ->
-      if error
-        return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect body}\n\n"
-      res.json docBody
-      # bump the _rev
-      req.session._rev = body.rev
-
 app.post '/model-configs', (req, res, next) ->
   docBody = null
   counter = null
