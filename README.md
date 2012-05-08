@@ -75,3 +75,9 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
     ```
     curl -X POST http://127.0.0.1:5984/_replicate -d '{"source":"model-configs", "target":"http://username:password@localhost:5985/model-configs", "continuous":false}' -H "Content-Type: application/json"
     ```
+
+# Deploying updated versions to the EC2 server
+
+    ```
+    ssh deploy@ec2-50-17-17-189.compute-1.amazonaws.com "cd /var/www; git pull; sudo restart lab.dev.concord.org"
+    ```
