@@ -3,7 +3,6 @@ util       = require 'util'
 express    = require 'express'
 httpProxy  = require 'http-proxy'
 io         = require 'socket.io'
-nanoModule = require 'nano'
 cradle     = require 'cradle'
 request    = require 'request'
 
@@ -27,10 +26,8 @@ io = io.listen server
 # the CouchDB database we will use
 dbPrefix = 'http://localhost:5984'
 dbName   = 'model-configs'
-nano     = nanoModule dbPrefix
-db       = nano.use dbName
 
-dbc      = (new cradle.Connection()).database 'model-configs'
+db      = (new cradle.Connection()).database 'model-configs'
 
 # TODO create a reasonably-likely-to-be-unique value of dbServerInstance if the couchdb instance
 # doesn't have one. Store it in a separate db so it doesn't get replicated.
@@ -54,7 +51,7 @@ app.use express.session
 # requests for model data
 #
 app.get '/model-config/:docName', (req, res, next) ->
-  dbc.get req.params.docName, (error, doc) ->
+  db.get req.params.docName, (error, doc) ->
     if error
       return next "Couldn't get #{req.url}\n\n#{error}\n\n"
     req.session._rev = doc._rev
@@ -89,7 +86,7 @@ app.post '/model-configs', (req, res, next) ->
     docName = "#{dbServerInstance}-#{counter}"
 
     console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
-    dbc.save docName, docBody, (error, couchRes) ->
+    db.save docName, docBody, (error, couchRes) ->
       if error
         return next "Error updating doc #{docName} in db #{dbName}:\n\n#{util.inspect couchRes}\n\n"
       res.setHeader 'Location', "/model-config/#{docName}"
