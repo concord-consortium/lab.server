@@ -4,7 +4,6 @@ express    = require 'express'
 httpProxy  = require 'http-proxy'
 io         = require 'socket.io'
 cradle     = require 'cradle'
-request    = require 'request'
 
 app = express.createServer()
 
