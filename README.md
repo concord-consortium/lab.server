@@ -64,7 +64,7 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
    following replication command (at the command line):
 
     ```
-    curl -X POST http://username:password@127.0.0.1:5984/_replicate -d '{"source":"http://localhost:5985/model-configs", "target":"model-configs", "continuous":false}' -H "Content-Type: application/json"
+    curl -X POST http://username:password@127.0.0.1:5984/_replicate -d '{"source":"http://localhost:5985/models", "target":"models", "continuous":false}' -H "Content-Type: application/json"
     ```
 
   The `username` and `password` are only required if you set up an admin account on your local machine.
@@ -73,7 +73,7 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
   the CouchDB admin password for the EC2 server rather than your local password, as folloows:
 
     ```
-    curl -X POST http://127.0.0.1:5984/_replicate -d '{"source":"model-configs", "target":"http://username:password@localhost:5985/model-configs", "continuous":false}' -H "Content-Type: application/json"
+    curl -X POST http://127.0.0.1:5984/_replicate -d '{"source":"models", "target":"http://username:password@localhost:5985/models", "continuous":false}' -H "Content-Type: application/json"
     ```
 
 # Deploying updated versions to the EC2 server
