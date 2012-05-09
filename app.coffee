@@ -11,6 +11,29 @@ app = express.createServer()
 port = 3000 unless process.env.NODE_PORT
 if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
 
+# load configuration details
+
+try
+  config = require './config'
+catch err
+  console.error """
+    ***
+      Couldn't load config information by requiring './config'.
+
+      Choose a meaningful prefix that will uniquely identify the CouchDB install
+      (e.g., 'dev' for the main dev server, or your initials for your local
+      machine.)
+
+      Copy config.sample.coffee to config.coffee. Edit the file with the database
+      prefix, and an admin username and password for your CouchDB install.
+
+      If you have left CouchDB in 'admin party' mode (no authentication required
+      to create databases!), make the values for 'username' and 'password' the
+      empty string.
+    ***
+  """
+  process.exit 1
+
 app.configure 'development', ->
   console.log "Development env starting on port #{port}"
 app.configure 'production', ->

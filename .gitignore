@@ -3,3 +3,5 @@ public
 log/
 couchdb.stderr
 couchdb.stdout
+config.*
+!config.sample.*
