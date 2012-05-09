@@ -95,15 +95,10 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
 
 # Deploying updated versions to the EC2 server
 
-    ```
     ssh deploy@ec2-50-17-17-189.compute-1.amazonaws.com "cd /var/www; git pull; sudo restart lab.dev.concord.org"
-    ```
 
-  If the server is not responsive after this command, you can check the error log to see what
-  crashed:
+  If the server is not responsive after this command, you can check the error log to see what might have crashed:
 
-    ```
     ssh deploy@ec2-50-17-17-189.compute-1.amazonaws.com
     cd /var/www
     tail log/error.log
-    ```
