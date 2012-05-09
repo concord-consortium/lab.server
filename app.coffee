@@ -24,9 +24,9 @@ server = app.listen port
 io = io.listen server
 
 # the CouchDB database we will use (default cradle connection is to locahost:5984)
-dbPrefix = 'http://localhost:5984'
 dbName   = 'model-configs'
 db       = (new cradle.Connection()).database dbName
+dbPrefix = "#{db.connection.host}:#{db.connection.port}/#{db.name}"
 
 # TODO create a reasonably-likely-to-be-unique value of dbServerInstance if the couchdb instance
 # doesn't have one. Store it in a separate db so it doesn't get replicated.
@@ -63,7 +63,7 @@ app.post '/model-configs', (req, res, next) ->
   counter = null
 
   # get an id
-  request.post "#{dbPrefix}/#{dbName}/_design/app/_update/bump/counter",  (error, response, body) ->
+  request.post "http://#{dbPrefix}/_design/app/_update/bump/counter",  (error, response, body) ->
     if error
       return next "Error bumping counter:\n\n#{error}\n\n#{response}\n\n"
     counter = parseInt body, 10
