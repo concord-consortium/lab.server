@@ -47,37 +47,55 @@ server = app.listen port
 # listen for socket.io requests from client
 io = io.listen server
 
-# the CouchDB database we will use (default cradle connection is to locahost:5984)
-dbName   = 'model-configs'
-conn     = new cradle.Connection()
-db       = conn.database dbName
 
+args = {}
 if config.database.username
-  secConn = new cradle.Connection
+  args =
     auth:
       username: config.database.username
       password: config.database.password
 
+conn = new cradle.Connection args
+
+dbName   = 'models'
+db = conn.database dbName
 
 counterDbName = 'lab-counter'
-counterDb = secConn.database counterDbName
+counterDb = conn.database counterDbName
 
 counterDb.exists (error, exists) ->
+  nextStep = makeCounterDoc
+
   if error
-    console.error "Couldn't check for existence of counterDb!\n#{util.inspect error}"
+    console.error "Couldn't check for existence of counter db!\n#{util.inspect error}"
     process.exit 1
   if exists
-    updateCounterDesignDoc setupApp
-  if !exists
-    console.log 'creating db...'
+    nextStep()
+  else
+    console.log 'creating counter db...'
     counterDb.create (err, res) ->
       if err
         console.error "Couldn't create counter db!\n#{util.inspect err}"
         process.exit 1
-      updateCounterDesignDoc setupApp
+      nextStep()
 
+makeCounterDoc = ->
+  nextStep = updateCounterDesignDoc
 
-updateCounterDesignDoc = (cont) ->
+  counterDb.get 'counter', (error, response) ->
+    if not error
+      nextStep()
+    else
+      console.log "counterdb counter document not found; creating"
+      counterDb.save 'counter', { value: 0 }, (error, response) ->
+        if error
+          console.error "Could not create counter db document!"
+          process.exit 1
+        else
+          nextStep()
+
+updateCounterDesignDoc = ->
+  nextStep = makeModelDb
 
   # This is a so-called "document update function" that will be passed to CouchDB
   # It will update the 'value' field of the document it's called on.
@@ -88,21 +106,35 @@ updateCounterDesignDoc = (cont) ->
         doc.value++
         [doc, ''+doc.value]
 
-  counterDb.save 'counter', { value: 0 }, (error, response) ->
-    # ignore error which will occur if 'counter' already exists (we just want it to exist)
-    if error
-      console.log "counterdb counter document already exists, not creating."
-    counterDb.get '_design/app', (err, res) ->
-      # ignore error which will occur _design/app doesn't exist yet (we're force updating)
-      if not err
-        console.log "Force-updating counterDb's _design/app; _rev = #{res.json._rev}"
-        designDoc._rev = res.json._rev
-      counterDb.save '_design/app', designDoc, (err, res) ->
-        if err
-          console.error "couldn't save counterDb's _design/app!"
-          process.exit 1
+  counterDb.get '_design/app', (err, res) ->
+    # ignore error which will occur _design/app doesn't exist yet (we're force updating)
+    if not err
+      console.log "Force-updating counterDb's _design/app; _rev = #{res.json._rev}"
+      designDoc._rev = res.json._rev
 
-        cont()
+    counterDb.save '_design/app', designDoc, (err, res) ->
+      if err
+        console.error "couldn't save counterDb's _design/app!"
+        process.exit 1
+
+      nextStep()
+
+makeModelDb = (cont) ->
+  nextStep = setupApp
+
+  db.exists (error, exists) ->
+    if error
+      console.error "Couldn't check for existence of models db!\n#{util.inspect error}"
+      process.exit 1
+    if exists
+      nextStep()
+    else
+      console.log 'creating models db...'
+      db.create (err, res) ->
+        if err
+          console.error "Couldn't create models db!\n#{util.inspect err}"
+          process.exit 1
+        nextStep()
 
 setupApp = ->
 
@@ -181,3 +213,5 @@ setupApp = ->
   #
   app.use '/couchdb', httpProxy.createServer 'localhost', 5984
   app.use express.static "#{__dirname}/public"
+
+  console.log "ready"
