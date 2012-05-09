@@ -18,20 +18,24 @@ try
 catch err
   console.error """
     ***
-      Couldn't load config information by requiring './config'.
+      You need to set up a 'config.coffee' file for this Lab server.
 
-      Choose a meaningful prefix that will uniquely identify the CouchDB install
-      (e.g., 'dev' for the main dev server, or your initials for your local
-      machine.)
+      First, choose a meaningful prefix for your installation. This prefix will be
+      used to namespace the models you create in this instance. For example, if you
+      choose the prefix 'hm' (for Happy Modeler) then models you save will have CouchDB
+      ids 'hm-1', 'hm-2', etc. When you replicate models from your local database to
+      another database (say the main dev instance), this namespacing will help prevent
+      document update conflicts.
 
-      Copy config.sample.coffee to config.coffee. Edit the file with the database
+      Now, copy config.sample.coffee to config.coffee. Edit the file with the database
       prefix, and an admin username and password for your CouchDB install.
 
       If you have left CouchDB in 'admin party' mode (no authentication required
       to create databases!), make the values for 'username' and 'password' the
       empty string.
 
-      On a public facing server, you should also modify the session secret.
+      On a public facing server, you should also choose a session 'secret' string. This
+      is used by Connect to secure user sessions against cookie hijacking.
     ***
   """
   process.exit 1

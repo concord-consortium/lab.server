@@ -43,7 +43,24 @@ Node.js + CouchDB backend for [Lab](http://github.com/concord-consortium/lab)
     nodemon app.coffee
     ```
 
-7. Visit the Lab app at [http://localhost:3000/](http://localhost:3000/)
+7. The app will attempt to read your `config.coffee` file and set up the appropriate
+   databases and documents in your CouchDB instance.
+
+   If it cannot read your `config.coffee` file, it will offer instructions as to how
+   to modify `config.sample.coffee` so that it can be used as your `config.coffee` file.
+
+   The `database.prefix` value is intended so that models created and saved in any running
+   Lab instance (on a developer's machine, or on a public server) can be replicated to any
+   other Lab instance without worrying about conflicting model ids. Say you choose 'hm'
+   for Happy Modeler as your prefix. Then models will be saved with ids 'hm-1', 'hm-2', etc.
+   If you make sure no other Lab developer uses 'hm', then you can always replicate your
+   models to a common server without worrying about conflicts.
+
+   Eventually, of course, we will use full UUIDs to prevent low-level document id conflicts,
+   and provide the necessary server support for managing namespaces in a more sophisticated
+   way.
+
+8. Visit the Lab app at [http://localhost:3000/](http://localhost:3000/)
 
 
 # Replicating CouchDB database from developer machine to dev server, or vice versa
