@@ -30,6 +30,8 @@ catch err
       If you have left CouchDB in 'admin party' mode (no authentication required
       to create databases!), make the values for 'username' and 'password' the
       empty string.
+
+      On a public facing server, you should also modify the session secret.
     ***
   """
   process.exit 1
@@ -60,10 +62,10 @@ db       = (new cradle.Connection()).database dbName
 # TODO use a persistent CouchDB session store
 store = new express.session.MemoryStore()
 
-app.use express.cookieParser 'not very secret secret'
+app.use express.cookieParser config.session.secret
 app.use express.session
   store: store
-  secret: 'not very secret secret'
+  secret: config.session.secret
 
 #
 # requests for model data
