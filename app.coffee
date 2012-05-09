@@ -52,8 +52,6 @@ db       = (new cradle.Connection()).database dbName
 # TODO create a reasonably-likely-to-be-unique value of dbServerInstance if the couchdb instance
 # doesn't have one. Store it in a separate db so it doesn't get replicated.
 
-# A unique id for the CouchDB instance we're talking to, to namespace its counter
-dbServerInstance = 'test'
 
 #
 # session support
@@ -103,7 +101,7 @@ app.post '/model-configs', (req, res, next) ->
   # Promises pattern would be useful here
   trySave = ->
     return unless docBody and counter
-    docName = "#{dbServerInstance}-#{counter}"
+    docName = "#{config.database.prefix}-#{counter}"
 
     console.log "PUTting to doc #{docName} in db #{dbName}:\n\n#{util.inspect docBody}"
     db.save docName, docBody, (error, couchRes) ->
