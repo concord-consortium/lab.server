@@ -63,10 +63,10 @@ app.post '/model-configs', (req, res, next) ->
   counter = null
 
   # get an id
-  request.post "http://#{dbPrefix}/_design/app/_update/bump/counter",  (error, response, body) ->
+  db.update 'app/bump', 'counter', (error, response) ->
     if error
-      return next "Error bumping counter:\n\n#{error}\n\n#{response}\n\n"
-    counter = parseInt body, 10
+      return next "Error bumping counter:\n\n#{util.inspect error}\n\n#{response}\n\n"
+    counter = parseInt response.json, 10
     trySave()
 
   # stream in the POST body
