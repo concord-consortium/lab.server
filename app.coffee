@@ -16,29 +16,62 @@ if process.env.NODE_PORT then port = parseInt process.env.NODE_PORT, 10
 try
   config = require './config'
 catch err
+  if err.toString().indexOf('Cannot find module') >= 0
+    console.error """
+      ***
+        You need to set up a 'config.coffee' file for this Lab server.
+
+        First, choose a meaningful prefix for your installation. This prefix will be
+        used to namespace the models you create in this instance. For example, if you
+        choose the prefix 'hm' (for Happy Modeler) then models you save will have CouchDB
+        ids 'hm-1', 'hm-2', etc. When you replicate models from your local database to
+        another database (say the main dev instance), this namespacing will help prevent
+        document update conflicts.
+
+        Now, copy config.sample.coffee to config.coffee. Edit the file with the database
+        prefix, and an admin username and password for your CouchDB install.
+
+        If you have left CouchDB in 'admin party' mode (no authentication required
+        to create databases!), make the values for 'username' and 'password' the
+        empty string.
+
+        On a public facing server, you should also choose a session 'secret' string. This
+        is used by Connect to secure user sessions against cookie hijacking.
+      ***
+    """
+  else
+    console.error """
+      ***
+        Aborting! There was an error reading the config.coffee file. The error was:
+
+        #{err}
+      ***
+    """
+
+  process.exit 1
+
+
+if config.database.prefix is 'CHANGEME'
   console.error """
     ***
-      You need to set up a 'config.coffee' file for this Lab server.
+      Aborting! The current database.prefix in your config.coffee file is "CHANGEME".
 
-      First, choose a meaningful prefix for your installation. This prefix will be
+      You need to choose a meaningful prefix for your installation. This prefix will be
       used to namespace the models you create in this instance. For example, if you
       choose the prefix 'hm' (for Happy Modeler) then models you save will have CouchDB
       ids 'hm-1', 'hm-2', etc. When you replicate models from your local database to
       another database (say the main dev instance), this namespacing will help prevent
       document update conflicts.
 
-      Now, copy config.sample.coffee to config.coffee. Edit the file with the database
-      prefix, and an admin username and password for your CouchDB install.
-
-      If you have left CouchDB in 'admin party' mode (no authentication required
-      to create databases!), make the values for 'username' and 'password' the
-      empty string.
-
-      On a public facing server, you should also choose a session 'secret' string. This
-      is used by Connect to secure user sessions against cookie hijacking.
+      Once you have chosen a prefix unique to your installation, edit the config.coffee
+      file with that prefix.
     ***
   """
+
   process.exit 1
+
+
+# Things are apparently OK.
 
 app.configure 'development', ->
   console.log "Development env starting on port #{port}"
