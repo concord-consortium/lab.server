@@ -190,7 +190,7 @@ setupApp = ->
   #
   # requests for model data
   #
-  app.get '/model-config/:docName', (req, res, next) ->
+  app.get '/md2d_models/:docName', (req, res, next) ->
     db.get req.params.docName, (error, doc) ->
       if error
         return next "Couldn't get #{req.url}\n\n#{error}\n\n"
@@ -199,7 +199,7 @@ setupApp = ->
       console.log "For request #{req.url}:\n  _rev = #{req.session._rev}\ndoc:\n\n#{util.inspect doc}\n\n"
       res.json doc
 
-  app.post '/model-configs', (req, res, next) ->
+  app.post '/md2d_models', (req, res, next) ->
     docBody = null
     counter = null
 
